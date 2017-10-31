@@ -2,7 +2,7 @@
 #include <CapacitiveSensor.h>
 
 //CAPACITIVES
-#define HEAD_SCALIBRATION_TIMER 5000
+#define HEAD_SCALIBRATION_TIMER 20000
 #define BODY_SCALIBRATION_TIMER 5000
 #define N_HEAD_SENSORS 4
 #define N_BODY_SENSORS 3
@@ -21,7 +21,7 @@ FilterOnePole front_body_f( LOWPASS, 1.0 );
 int lowBodyThreshold[3]={200,200,200};
 int highBodyThreshold[3]{380,380,380};
 
-#define  HUGTIME 4000
+#define  HUGTIME 2500
 //#define  MIN_PAT_TIME 250
 //#define  MAX_PAT_TIME 5000
 //#define  MIN_HIT_TIME 10
@@ -53,11 +53,11 @@ unsigned long int previousStateStartTime[N_BODY_SENSORS] = {0, 0, 0};
 CapacitiveSensor* headSensor[N_HEAD_SENSORS];
 long headSensorValue[N_HEAD_SENSORS];
 int pressedButton = -1;
-long headThreshold = 800;
+long headThreshold = 1500; //it was 300
 unsigned long int releaseButtonTime=0;
 
 enum warKingsCapacitives {noOne, head, body, both};
-warKingsCapacitives workingCapacitives =body;
+warKingsCapacitives workingCapacitives =head;
 
 
 void updateState(bodyCapacitiveStates state, int i) {

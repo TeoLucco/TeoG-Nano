@@ -1,3 +1,5 @@
+boolean touched[N_BODY_SENSORS]={false,false,false};
+int touchedCount=0;
 
 void bodyCapacitiveSetup() {
   bodySensor[0] = new CapacitiveSensor(BODY_SX_S, BODY_SX_R); //sx
@@ -26,6 +28,7 @@ void updateCapacitiveStates() {
     calibration[i]=bodySensor[i]->getCalibrate();
   }
   filtering();
+  touchedCount=0;
   for (int i = 0; i < N_BODY_SENSORS; i++) {
     updateBodyState(i);
   }
@@ -42,6 +45,7 @@ void filtering() {
 }
 
 void updateBodyState(int i) {
+  touched[i]=false;
   previousDynamicCapacitiveState[i] = capacitiveState[i];
   if (bodySensorValue[i] < lowBodyThreshold[i])
     updateState(no_touch, i);
@@ -49,6 +53,7 @@ void updateBodyState(int i) {
     updateState(soft_touch, i);
   else if (bodySensorValue[i] >= highBodyThreshold[i])
     updateState(strong_touch, i);
+  if(capacitiveState[i]==soft_touch || capacitiveState[i]==strong_touch){touched[i]=true; touchedCount++;}
 }
 
 void checkInteractions() {
@@ -66,10 +71,12 @@ long maxValue = 0;
 void waitTouch() {
   hugsCount = 0;
   maxValue=0;
-  if ((bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] < lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
-      (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] <= lowBodyThreshold[0]) ||
+  if ((bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] <  lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
+      (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] <  lowBodyThreshold[0]) ||
+      (bodySensorValue[2] <  lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
       (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0])) {
     touchState = hug;
+    startTouchingTime = millis();
   }
   else if ((capacitiveState[0] == soft_touch || capacitiveState[0] == strong_touch) && capacitiveState[1] == no_touch && capacitiveState[2] == no_touch) {
     startTouchingTime = millis();
@@ -89,15 +96,29 @@ void waitTouch() {
 }
 
 void checkHug() {
-  if ((millis() - stateStartTime[2] >= HUGTIME * (hugsCount + 1) && bodySensorValue[2] >= lowBodyThreshold[2]) &&
-      ((millis() - stateStartTime[0] >= HUGTIME * (hugsCount + 1) && bodySensorValue[0] >= lowBodyThreshold[0]) ||
-       (millis() - stateStartTime[1] >= HUGTIME * (hugsCount + 1) && bodySensorValue[1] >= lowBodyThreshold[1]) )) {
+    if(touchedCount>1){for (int i = 0; i < N_BODY_SENSORS; i++) bodySensor[i]->resetLastCall();}else{resetCapacitives();}
+//  if (  ((millis() - stateStartTime[2] >= HUGTIME * (hugsCount + 1) && bodySensorValue[2] >= lowBodyThreshold[2]) 
+//          && (millis() - stateStartTime[0] >= HUGTIME * (hugsCount + 1) && bodySensorValue[0] >= lowBodyThreshold[0]))
+//      ||((millis() - stateStartTime[2] >= HUGTIME * (hugsCount + 1) && bodySensorValue[2] >= lowBodyThreshold[2]) 
+//          && (millis() - stateStartTime[1] >= HUGTIME * (hugsCount + 1) && bodySensorValue[1] >= lowBodyThreshold[1]))
+//      ||((millis() - stateStartTime[0] >= HUGTIME * (hugsCount + 1) && bodySensorValue[0] >= lowBodyThreshold[0]) 
+//          && (millis() - stateStartTime[1] >= HUGTIME * (hugsCount + 1) && bodySensorValue[1] >= lowBodyThreshold[1]))){
+    if( millis()-startTouchingTime>=HUGTIME && (   (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[0] >= lowBodyThreshold[0])
+                                                || (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1])
+                                                || (bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) )){
     hugsCount++;
-    //Serial.write(1);
-    //Serial.println(hugsCount);
+    startTouchingTime=millis();
+    Serial.write(1);
+//    Serial.println();
+//    Serial.println();
+//    Serial.print("HUG ");
+//    Serial.println(hugsCount);
+//    Serial.println();
+//    Serial.println();
   }
   if (capacitiveState[2] == no_touch && capacitiveState[1] == no_touch && capacitiveState[0] == no_touch)
     touchState = nothing;
+  if(hugsCount==8) resetCapacitives();
 }
 
 
@@ -137,27 +158,28 @@ if (millis() - startTouchingTime > MAX_HIT_TIME) {
 void patComplete(int i) {
   touchState = nothing;
   resetCapacitives();
-  //Serial.println();
-  Serial.print(",PAT");
-  //Serial.println();
-  //Serial.write(2);
-  //Serial.write(i);
+//  Serial.println();
+//  Serial.print("PAT");
+//  Serial.println();
+  Serial.write(2);
+  Serial.write(i);
 
 }
 
 void hitComplete(int i) {
   touchState = nothing;
   resetCapacitives();
-  //Serial.println();
-  Serial.print(",HIT");
-  //Serial.println();
-  //Serial.write(3);
-  //Serial.write(i);
+//  Serial.println();
+//  Serial.print(",HIT");
+//  Serial.println();
+  Serial.write(3);
+  Serial.write(i);
 }
 
 void patHitStatusExitCond() {
-  if ((bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] < lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
-      (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] <= lowBodyThreshold[0]) ||
+  if ((bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] <  lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
+      (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] <  lowBodyThreshold[0]) ||
+      (bodySensorValue[2] <  lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
       (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0])) {
     touchState = hug;
     startTouchingTime=millis();
