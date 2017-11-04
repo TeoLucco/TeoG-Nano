@@ -1,24 +1,20 @@
 void SerialLoop() {
-//  if (print) {
-//    print = false;
-//    if (workingCapacitives == head) {
-//      Serial.print(headSensorValue[0]); Serial.print("    "); Serial.print(headSensorValue[1]); Serial.print("    ");
-//      Serial.print(headSensorValue[2]); Serial.print("    "); Serial.print(headSensorValue[3]); Serial.print("    "); Serial.println(pressedButton);
-//    } else if (workingCapacitives == body) {
-//      Serial.println();
-//      //Serial.print(millis()); Serial.print(",");
-//      for(int i=0;i<N_BODY_SENSORS;i++){
-//      Serial.print(bodySensorValue[i]); Serial.print("  "); //Serial.print(calibration[i]); Serial.print(",");  
-//      Serial.print(capacitiveState[i]); Serial.print("  ");
-//      } 
-//      Serial.print(touchState);  
-//      //Serial.print(millis() - startTouchingTime); 
-//    }
-//  }
-//  if (workingCapacitives == head) {
-//      Serial.print(headSensorValue[0]); Serial.print("    "); Serial.print(headSensorValue[1]); Serial.print("    ");
-//      Serial.print(headSensorValue[2]); Serial.print("    "); Serial.print(headSensorValue[3]); Serial.print("    "); Serial.println(pressedButton);
-//    }
+  if (print) {
+    print = false;
+    if (workingCapacitives == body) {
+      Serial.println("");
+      Serial.print(millis()); Serial.print(",");
+      for(int i=0;i<N_BODY_SENSORS-1;i++){
+      Serial.print(bodySensorValue[i]); Serial.print(","); //Serial.print(calibration[i]); Serial.print(",");  
+      } 
+      Serial.print(bodySensorValue[N_BODY_SENSORS-1]);
+      //Serial.print(millis() - startTouchingTime); 
+    }
+  }
+  if (workingCapacitives == head) {
+      Serial.print(headSensorValue[0]); Serial.print("    "); Serial.print(headSensorValue[1]); Serial.print("    ");
+      Serial.print(headSensorValue[2]); Serial.print("    "); Serial.print(headSensorValue[3]); Serial.print("    "); Serial.println(pressedButton);
+    }
   reciveSerial();
   sendSerial();
 }

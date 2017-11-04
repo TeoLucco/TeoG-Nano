@@ -18,17 +18,18 @@ FilterOnePole left_body_f( LOWPASS, 1.0 );
 FilterOnePole right_body_f( LOWPASS, 1.0 );
 FilterOnePole front_body_f( LOWPASS, 1.0 );
 
-int lowBodyThreshold[3]={200,200,200};
-int highBodyThreshold[3]{380,380,380};
+int lowBodyThreshold[3]={150,150,150};
+int highBodyThreshold[3]{400,400,400};
 
 #define  HUGTIME 2500
 //#define  MIN_PAT_TIME 250
 //#define  MAX_PAT_TIME 5000
 //#define  MIN_HIT_TIME 10
-#define  MAX_HIT_TIME 500
+#define  MAX_HIT_TIME 550
 int hugsCount = 0;
 enum touchTypes {nothing, hug, hitPat0, hitPat1, hitPat2};
 touchTypes touchState = nothing;
+unsigned long int touchingTime=0;
 
 CapacitiveSensor* bodySensor[N_BODY_SENSORS];
 long bodySensorValue_nf[N_BODY_SENSORS];
@@ -53,11 +54,11 @@ unsigned long int previousStateStartTime[N_BODY_SENSORS] = {0, 0, 0};
 CapacitiveSensor* headSensor[N_HEAD_SENSORS];
 long headSensorValue[N_HEAD_SENSORS];
 int pressedButton = -1;
-long headThreshold = 1500; //it was 300
+long headThreshold = 1100; //it was 300
 unsigned long int releaseButtonTime=0;
 
 enum warKingsCapacitives {noOne, head, body, both};
-warKingsCapacitives workingCapacitives =head;
+warKingsCapacitives workingCapacitives =body;
 
 
 void updateState(bodyCapacitiveStates state, int i) {
