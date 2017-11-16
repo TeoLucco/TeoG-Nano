@@ -3,7 +3,7 @@
 
 //CAPACITIVES
 #define HEAD_SCALIBRATION_TIMER 20000
-#define BODY_SCALIBRATION_TIMER 5000
+#define BODY_SCALIBRATION_TIMER 3000
 #define N_HEAD_SENSORS 4
 #define N_BODY_SENSORS 3
 //BODY CAPACITIVES
@@ -18,18 +18,19 @@ FilterOnePole left_body_f( LOWPASS, 1.0 );
 FilterOnePole right_body_f( LOWPASS, 1.0 );
 FilterOnePole front_body_f( LOWPASS, 1.0 );
 
-int lowBodyThreshold[3]={150,150,150};
-int highBodyThreshold[3]{400,400,400};
-
-#define  HUGTIME 2500
+int lowBodyThreshold[3]={400,400,400};
+int highBodyThreshold[3]{1400,1400,1400};
+#define RESTABILIZATION_TIME 450
+#define  HUGTIME 1500
 //#define  MIN_PAT_TIME 250
-//#define  MAX_PAT_TIME 5000
+#define  MAX_PAT_TIME 1000
 //#define  MIN_HIT_TIME 10
 #define  MAX_HIT_TIME 550
 int hugsCount = 0;
 enum touchTypes {nothing, hug, hitPat0, hitPat1, hitPat2};
 touchTypes touchState = nothing;
 unsigned long int touchingTime=0;
+unsigned long int bodyStartTime=0;
 
 CapacitiveSensor* bodySensor[N_BODY_SENSORS];
 long bodySensorValue_nf[N_BODY_SENSORS];
@@ -71,6 +72,7 @@ void updateState(bodyCapacitiveStates state, int i) {
 }
 
 void setup() {
+  AccSetup();
   bodyCapacitiveSetup();
   headCapacitiveSetup();
   Serial.begin(38400); //serialSetup ;)

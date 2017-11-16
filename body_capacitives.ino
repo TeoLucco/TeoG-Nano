@@ -13,7 +13,10 @@ void bodyCapacitiveSetup() {
 
 void bodyCapacitiveLoop() {
   updateCapacitiveStates();
-  checkInteractions();
+  accLoop();
+  if(millis()-bodyStartTime>RESTABILIZATION_TIME){
+    checkInteractions();
+  }
 }
 unsigned long int lastMeasurement = 0;
 boolean print = false;
@@ -29,17 +32,17 @@ void updateCapacitiveStates() {
     print = true;
     for (int i = 0; i < N_BODY_SENSORS; i++) {
       bodySensorValue_nf[i] = bodySensor[i]->capacitiveSensor(10);
-      if (bodySensorValue_nf[i] >= SCALIBRATION_VALUE && !overTheLimit[i]) {
-        startTime[i] = millis();
-        overTheLimit[i] = true;
-      }
-      if (bodySensorValue_nf[i] < SCALIBRATION_VALUE && overTheLimit[i])
-        overTheLimit[i] = false;
-      if (overTheLimit[i] && millis() - startTime[i] > BODY_SCALIBRATION_TIMER) {
-        //Serial.println("AUTOCALIBRAZIONE");
-        bodySensor[i]->reset_CS_AutoCal();
-        overTheLimit[i] = false;
-      }
+//      if (bodySensorValue_nf[i] >= SCALIBRATION_VALUE && !overTheLimit[i]) {
+//        startTime[i] = millis();
+//        overTheLimit[i] = true;
+//      }
+//      if (bodySensorValue_nf[i] < SCALIBRATION_VALUE && overTheLimit[i])
+//        overTheLimit[i] = false;
+//      if (overTheLimit[i] && millis() - startTime[i] > BODY_SCALIBRATION_TIMER) {
+//        //Serial.println("AUTOCALIBRAZIONE");
+//        bodySensor[i]->reset_CS_AutoCal();
+//        overTheLimit[i] = false;
+//      }
     }
     filtering();
     touchedCount = 0;
@@ -82,16 +85,16 @@ void checkInteractions() {
     case hitPat2:    checkHitPat2(); break;
   }
 }
-
+unsigned long int lastTilt=0;
 unsigned long int startTouchingTime = 0;
 long maxValue = 0;
 void waitTouch() {
   hugsCount = 0;
   maxValue = 0;
-  if ((bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] <  lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
+  if (!tiltState && ((bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] <  lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
       (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] <  lowBodyThreshold[0]) ||
       (bodySensorValue[2] <  lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
-      (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0])) {
+      (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]))) {
     touchState = hug;
     startTouchingTime = millis();
   }
@@ -109,23 +112,30 @@ void waitTouch() {
     startTouchingTime = millis();
     maxValue = 0;
     touchState = hitPat2;
+  }else if (tiltState && capacitiveState[0] == no_touch && capacitiveState[1] == no_touch && capacitiveState[2] == no_touch){
+    //if(millis()-lastTilt>2000){
+      //lastTilt=millis();
+      resetTiltState();
+      hitComplete(3);
+     //}
   }
 }
 
 void checkHug() {
-  //if(touchedCount>1){for (int i = 0; i < N_BODY_SENSORS; i++) bodySensor[i]->resetLastCall();}else{resetCapacitives();}
-  //  if (  ((millis() - stateStartTime[2] >= HUGTIME * (hugsCount + 1) && bodySensorValue[2] >= lowBodyThreshold[2])
-  //          && (millis() - stateStartTime[0] >= HUGTIME * (hugsCount + 1) && bodySensorValue[0] >= lowBodyThreshold[0]))
-  //      ||((millis() - stateStartTime[2] >= HUGTIME * (hugsCount + 1) && bodySensorValue[2] >= lowBodyThreshold[2])
-  //          && (millis() - stateStartTime[1] >= HUGTIME * (hugsCount + 1) && bodySensorValue[1] >= lowBodyThreshold[1]))
-  //      ||((millis() - stateStartTime[0] >= HUGTIME * (hugsCount + 1) && bodySensorValue[0] >= lowBodyThreshold[0])
-  //          && (millis() - stateStartTime[1] >= HUGTIME * (hugsCount + 1) && bodySensorValue[1] >= lowBodyThreshold[1]))){
-  if ( millis() - startTouchingTime >= HUGTIME && (   (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[0] >= lowBodyThreshold[0])
-       || (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1])
-       || (bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) )) {
+//  if(touchedCount>1){for (int i = 0; i < N_BODY_SENSORS; i++) bodySensor[i]->resetLastCall();}else{resetCapacitives();}
+    if (  ((millis() - stateStartTime[2] >= HUGTIME * (hugsCount + 1) && bodySensorValue[2] >= lowBodyThreshold[2])
+            && (millis() - stateStartTime[0] >= HUGTIME * (hugsCount + 1) && bodySensorValue[0] >= lowBodyThreshold[0]))
+        ||((millis() - stateStartTime[2] >= HUGTIME * (hugsCount + 1) && bodySensorValue[2] >= lowBodyThreshold[2])
+            && (millis() - stateStartTime[1] >= HUGTIME * (hugsCount + 1) && bodySensorValue[1] >= lowBodyThreshold[1]))
+        ||((millis() - stateStartTime[0] >= HUGTIME * (hugsCount + 1) && bodySensorValue[0] >= lowBodyThreshold[0])
+            && (millis() - stateStartTime[1] >= HUGTIME * (hugsCount + 1) && bodySensorValue[1] >= lowBodyThreshold[1]))){
+//  if ( millis() - startTouchingTime >= HUGTIME && (   (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[0] >= lowBodyThreshold[0])
+//       || (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1])
+//       || (bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) )) {
     hugsCount++;
     startTouchingTime = millis();
-    Serial.write(1);
+    Serial.write(9);
+    Serial.write(-1);
 //        Serial.println();
 //        Serial.println();
 //        Serial.print("HUG ");
@@ -140,60 +150,93 @@ void checkHug() {
 
 
 void checkHitPat0() {
-  if (bodySensorValue[0] > maxValue) maxValue = bodySensorValue[0];
+  //if (bodySensorValue[0] > maxValue) maxValue = bodySensorValue[0];
   if ((previousDynamicCapacitiveState[0] == soft_touch || previousDynamicCapacitiveState[0] == strong_touch) && previousDynamicCapacitiveState[1] == no_touch && previousDynamicCapacitiveState[2] == no_touch &&
       capacitiveState[0] == no_touch && capacitiveState[1] == no_touch && capacitiveState[2] == no_touch) {
     patHitComplete(0);
+  } else if(millis()-startTouchingTime>MAX_PAT_TIME){
+    resetCapacitives();
+    touchState = nothing;
+  }else if (tiltState){
+//    if(millis()-lastTilt>2000){
+//      lastTilt=millis();
+      resetTiltState();
+      hitComplete(0);
+     //}
   } else patHitStatusExitCond();
 }
 
 void checkHitPat1() {
-  if (bodySensorValue[1] > maxValue) maxValue = bodySensorValue[1];
+  //if (bodySensorValue[1] > maxValue) maxValue = bodySensorValue[1];
   if ((previousDynamicCapacitiveState[1] == soft_touch || previousDynamicCapacitiveState[1] == strong_touch) && previousDynamicCapacitiveState[0] == no_touch && previousDynamicCapacitiveState[2] == no_touch &&
       capacitiveState[1] == no_touch && capacitiveState[0] == no_touch && capacitiveState[2] == no_touch) {
     patHitComplete(1);
+  } else if(millis()-startTouchingTime>MAX_PAT_TIME){
+    resetCapacitives();
+    touchState = nothing;
+  }else if (tiltState){
+//    if(millis()-lastTilt>2000){
+//      lastTilt=millis();
+      resetTiltState();
+      hitComplete(1);
+     //}
   } else patHitStatusExitCond();
 }
 
 void checkHitPat2() {
-  if (bodySensorValue[2] > maxValue) maxValue = bodySensorValue[2];
+  //if (bodySensorValue[2] > maxValue) maxValue = bodySensorValue[2];
   if ((previousDynamicCapacitiveState[2] == soft_touch || previousDynamicCapacitiveState[2] == strong_touch) && previousDynamicCapacitiveState[0] == no_touch && previousDynamicCapacitiveState[1] == no_touch &&
       capacitiveState[2] == no_touch && capacitiveState[0] == no_touch && capacitiveState[1] == no_touch) {
     patHitComplete(2);
-  } else patHitStatusExitCond();
+  } else if(millis()-startTouchingTime>MAX_PAT_TIME){
+    resetCapacitives();
+    touchState = nothing;
+  }else if (tiltState){
+//    if(millis()-lastTilt>2000){
+//      lastTilt=millis();
+      resetTiltState();
+      hitComplete(2);
+     //}
+  }else patHitStatusExitCond();
 }
 
 void patHitComplete(int i) {
-  touchingTime = millis() - startTouchingTime;
-  if (touchingTime > MAX_HIT_TIME) {
-    patComplete(i);
-  } else {
-    if (maxValue > highBodyThreshold[i]) hitComplete(i);
-    else patComplete(i);
-  }
+//  touchingTime = millis() - startTouchingTime;
+//  if (touchingTime > MAX_HIT_TIME) {
+    if(tiltState){
+      resetTiltState();
+      hitComplete(i);
+    }else patComplete(i);
+//  } else {
+//    if (tiltState || maxValue > highBodyThreshold[i]){
+//      resetTiltState();
+//      hitComplete(i);
+//    }
+//    else patComplete(i);
+//  }
 }
 
 void patComplete(int i) {
   touchState = nothing;
   resetCapacitives();
-  Serial.print(",PAT " + String(i) + "," + String(maxValue) + "," + String(touchingTime));
-  //  Serial.println();
-  //  Serial.print("PAT");
-  //  Serial.println();
-  //  Serial.write(2);
-  //  Serial.write(i);
+//  Serial.print(",PAT " + String(i) + "," + String(maxValue) + "," + String(touchingTime));
+//    Serial.println();
+//    Serial.print("PAT");
+//    Serial.println();
+    Serial.write(2);
+    Serial.write(i);
 
 }
 
 void hitComplete(int i) {
   touchState = nothing;
   resetCapacitives();
-  Serial.print(",HIT " + String(i) + "," + String(maxValue) + "," + String(touchingTime));
-  //  Serial.println();
-  //  Serial.print(",HIT");
-  //  Serial.println();
-  //  Serial.write(3);
-  //  Serial.write(i);
+//  Serial.print(",HIT " + String(i) + "," + String(maxValue) + "," + String(touchingTime));
+//    Serial.println();
+//    Serial.print(",HIT");
+//    Serial.println();
+    Serial.write(3);
+    Serial.write(i);
 }
 
 void patHitStatusExitCond() {
@@ -205,6 +248,7 @@ void patHitStatusExitCond() {
     startTouchingTime = millis();
   } else if (capacitiveState[2] == no_touch && capacitiveState[1] == no_touch && capacitiveState[0] == no_touch)
     touchState = nothing;
+
 
 }
 
