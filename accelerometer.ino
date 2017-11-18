@@ -1,6 +1,6 @@
-#define THRESHOLD 33
+#define THRESHOLD 35
 #define DURATION 1
-#define RESET_TILT_STATE_TIMER 500
+#define RESET_TILT_STATE_TIMER 1000
 boolean tiltState =false;
 unsigned long int lastTiltTime=0;
 
@@ -38,7 +38,7 @@ void accLoop()
   Activites act = mpu.readActivites();
 
   if (act.isActivity) setTiltState();
-  //else if(tiltState && millis()-lastTiltTime>=RESET_TILT_STATE_TIMER) resetTiltState();
+  else if(tiltState && millis()-lastTiltTime>=RESET_TILT_STATE_TIMER) resetTiltState();
   
 }
 

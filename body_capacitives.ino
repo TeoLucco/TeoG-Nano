@@ -11,12 +11,14 @@ void bodyCapacitiveSetup() {
   }
 }
 
+unsigned long int capStateStartTime=0;
 void bodyCapacitiveLoop() {
   updateCapacitiveStates();
-  accLoop();
   if(millis()-bodyStartTime>RESTABILIZATION_TIME){
     checkInteractions();
   }
+  if( millis()-capStateStartTime>700)
+  accLoop();
 }
 unsigned long int lastMeasurement = 0;
 boolean print = false;
@@ -87,10 +89,8 @@ void checkInteractions() {
 }
 unsigned long int lastTilt=0;
 unsigned long int startTouchingTime = 0;
-long maxValue = 0;
 void waitTouch() {
   hugsCount = 0;
-  maxValue = 0;
   if (!tiltState && ((bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] <  lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
       (bodySensorValue[2] >= lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] <  lowBodyThreshold[0]) ||
       (bodySensorValue[2] <  lowBodyThreshold[2] && bodySensorValue[1] >= lowBodyThreshold[1] && bodySensorValue[0] >= lowBodyThreshold[0]) ||
@@ -100,24 +100,18 @@ void waitTouch() {
   }
   else if ((capacitiveState[0] == soft_touch || capacitiveState[0] == strong_touch) && capacitiveState[1] == no_touch && capacitiveState[2] == no_touch) {
     startTouchingTime = millis();
-    maxValue = 0;
     touchState = hitPat0;
   }
   else if (capacitiveState[0] == no_touch && (capacitiveState[1] == soft_touch || capacitiveState[1] == strong_touch) && capacitiveState[2] == no_touch) {
     startTouchingTime = millis();
-    maxValue = 0;
     touchState = hitPat1;
   }
   else if (capacitiveState[0] == no_touch && capacitiveState[1] == no_touch && (capacitiveState[2] == soft_touch || capacitiveState[2] == strong_touch)) {
     startTouchingTime = millis();
-    maxValue = 0;
     touchState = hitPat2;
-  }else if (tiltState && capacitiveState[0] == no_touch && capacitiveState[1] == no_touch && capacitiveState[2] == no_touch){
-    //if(millis()-lastTilt>2000){
-      //lastTilt=millis();
-      resetTiltState();
-      hitComplete(3);
-     //}
+//  }else if (tiltState && capacitiveState[0] == no_touch && capacitiveState[1] == no_touch && capacitiveState[2] == no_touch){
+//      resetTiltState();
+//      hitComplete(3);
   }
 }
 
@@ -150,7 +144,6 @@ void checkHug() {
 
 
 void checkHitPat0() {
-  //if (bodySensorValue[0] > maxValue) maxValue = bodySensorValue[0];
   if ((previousDynamicCapacitiveState[0] == soft_touch || previousDynamicCapacitiveState[0] == strong_touch) && previousDynamicCapacitiveState[1] == no_touch && previousDynamicCapacitiveState[2] == no_touch &&
       capacitiveState[0] == no_touch && capacitiveState[1] == no_touch && capacitiveState[2] == no_touch) {
     patHitComplete(0);
@@ -158,16 +151,12 @@ void checkHitPat0() {
     resetCapacitives();
     touchState = nothing;
   }else if (tiltState){
-//    if(millis()-lastTilt>2000){
-//      lastTilt=millis();
       resetTiltState();
       hitComplete(0);
-     //}
   } else patHitStatusExitCond();
 }
 
 void checkHitPat1() {
-  //if (bodySensorValue[1] > maxValue) maxValue = bodySensorValue[1];
   if ((previousDynamicCapacitiveState[1] == soft_touch || previousDynamicCapacitiveState[1] == strong_touch) && previousDynamicCapacitiveState[0] == no_touch && previousDynamicCapacitiveState[2] == no_touch &&
       capacitiveState[1] == no_touch && capacitiveState[0] == no_touch && capacitiveState[2] == no_touch) {
     patHitComplete(1);
@@ -175,16 +164,12 @@ void checkHitPat1() {
     resetCapacitives();
     touchState = nothing;
   }else if (tiltState){
-//    if(millis()-lastTilt>2000){
-//      lastTilt=millis();
       resetTiltState();
       hitComplete(1);
-     //}
   } else patHitStatusExitCond();
 }
 
 void checkHitPat2() {
-  //if (bodySensorValue[2] > maxValue) maxValue = bodySensorValue[2];
   if ((previousDynamicCapacitiveState[2] == soft_touch || previousDynamicCapacitiveState[2] == strong_touch) && previousDynamicCapacitiveState[0] == no_touch && previousDynamicCapacitiveState[1] == no_touch &&
       capacitiveState[2] == no_touch && capacitiveState[0] == no_touch && capacitiveState[1] == no_touch) {
     patHitComplete(2);
@@ -192,28 +177,16 @@ void checkHitPat2() {
     resetCapacitives();
     touchState = nothing;
   }else if (tiltState){
-//    if(millis()-lastTilt>2000){
-//      lastTilt=millis();
       resetTiltState();
       hitComplete(2);
-     //}
   }else patHitStatusExitCond();
 }
 
 void patHitComplete(int i) {
-//  touchingTime = millis() - startTouchingTime;
-//  if (touchingTime > MAX_HIT_TIME) {
     if(tiltState){
       resetTiltState();
       hitComplete(i);
     }else patComplete(i);
-//  } else {
-//    if (tiltState || maxValue > highBodyThreshold[i]){
-//      resetTiltState();
-//      hitComplete(i);
-//    }
-//    else patComplete(i);
-//  }
 }
 
 void patComplete(int i) {
@@ -237,6 +210,8 @@ void hitComplete(int i) {
 //    Serial.println();
     Serial.write(3);
     Serial.write(i);
+    resetTiltState();
+    workingCapacitives=noOne;
 }
 
 void patHitStatusExitCond() {

@@ -21,14 +21,15 @@ void SerialLoop() {
   sendSerial();
 }
 
+
 void reciveSerial() {
   if (Serial.available()) {
     int b = Serial.read();
     switch (b) {
-      case 0: workingCapacitives = noOne; break;
-      case 1: workingCapacitives = head;resetHeadCapacitives(); break;
-      case 2: resetCapacitives(); bodyStartTime=millis(); workingCapacitives = body; break;
-      case 3: workingCapacitives = both; break;
+      case 0: workingCapacitives = noOne; capStateStartTime=millis();break;
+      case 1: workingCapacitives = head;resetHeadCapacitives();capStateStartTime=millis(); break;
+      case 2: resetCapacitives(); bodyStartTime=millis(); workingCapacitives = body;capStateStartTime=millis(); break;
+      case 3: workingCapacitives = both;capStateStartTime=millis(); break;
     }
   }
 }

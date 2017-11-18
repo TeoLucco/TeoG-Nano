@@ -59,7 +59,7 @@ long headThreshold = 1100; //it was 300
 unsigned long int releaseButtonTime=0;
 
 enum warKingsCapacitives {noOne, head, body, both};
-warKingsCapacitives workingCapacitives =body;
+warKingsCapacitives workingCapacitives =noOne;
 
 
 void updateState(bodyCapacitiveStates state, int i) {
@@ -80,7 +80,7 @@ void setup() {
 
 void loop() {
   switch(workingCapacitives){
-    case noOne: break;
+    case noOne:  resetTiltState(); break;
     case  head: headCapacitiveLoop();break;
     case  body: bodyCapacitiveLoop();break;
     case  both: bodyCapacitiveLoop();headCapacitiveLoop();break;
